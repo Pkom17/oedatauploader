@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,6 +23,7 @@ import ci.itech.oedatauploader.utils.OEHttpClient;
 
 @Component
 @EnableScheduling
+@EnableAsync
 public class Task {
 
     @Autowired
@@ -38,8 +41,9 @@ public class Task {
     @Value("${upload.password}")
     private String password;
 
-    @Scheduled(fixedDelay = 5000)
-    private void readVlAnalysisForInsert(){
+    @Async
+    @Scheduled(fixedDelay = 300000)
+    public void readVlAnalysisForInsert(){
         while(true){
             List<VlAnalysisRecord> analysis = vlService.getAnalysisToInsert();
             if(analysis.size() == 0){
@@ -52,8 +56,9 @@ public class Task {
         }
     }
 
-    @Scheduled(fixedDelay = 5000)
-    private void readVlAnalysisForUpdate(){
+    @Async
+    @Scheduled(fixedDelay = 300000)
+    public void readVlAnalysisForUpdate(){
         while(true){
             try{
                 List<VlAnalysisRecord> analysis = vlService.getAnalysisToUpdate();
@@ -80,10 +85,10 @@ public class Task {
         }
     }
 
-    @Scheduled(fixedDelay = 5000)
-    private void uploader(){
+    @Async
+    @Scheduled(fixedDelay = 300000)
+    public void pushInsertData(){
         boolean isInsertTaskOver = false;
-        boolean isUpdateTaskOver = false;
 
         //Do insert
         while(!isInsertTaskOver){
@@ -97,16 +102,21 @@ public class Task {
             else{
                 isInsertTaskOver = true;
             }
-            break;
+            //break;
         }  
-        
+    }
+    
+
+    @Async
+    @Scheduled(fixedDelay = 300000)
+    public void pushUpdateData(){
+        boolean isUpdateTaskOver = false;       
         //Do update
         while(!isUpdateTaskOver){
             List<VlAnalysisRecord> dataToPushUpdate = vlService.getAnalysisToPush(VlAnalysisRecord.STATUS_TO_UPDATE);
             if(dataToPushUpdate.size()>0){
                 try{
                     HttpResponse response =  OEHttpClient.sendData(uriPath,username,password,dataToPushUpdate);
-                    System.out.println(response.getStatusLine());
                     if(response.getStatusLine().getStatusCode()==HttpStatus.SC_OK){
                         vlService.updatePushedAnalysis(dataToPushUpdate);
                     }
@@ -119,9 +129,8 @@ public class Task {
             else{
                 isUpdateTaskOver = true;
             }
-            break;
+            //break;
         }
 
     }
-    
 }

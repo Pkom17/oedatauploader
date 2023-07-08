@@ -201,4 +201,4 @@ CREATE OR REPLACE VIEW vl_analysis_view AS (
             AND so.org_id=o.id
             AND s.id=demo.s_id
             AND s.id = currentARVTreatmentINNs.art_samp_id
-            ORDER BY s.accession_number);
+            ORDER BY entered_date DESC);
