@@ -2,13 +2,13 @@ package ci.itech.oedatauploader.serviceImpl;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +20,19 @@ import org.springframework.transaction.annotation.Transactional;
 import ci.itech.oedatauploader.entities.VlAnalysisRecord;
 import ci.itech.oedatauploader.repositories.VlAnalysisRecordRepo;
 import ci.itech.oedatauploader.service.VlAnalysisRecordService;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Service
 @Transactional
@@ -82,7 +95,7 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
     @Override
     public int getAnalysisToInsertTotal() {
         List<Integer> results = new ArrayList<>();
-        String sql = "SELECT count(*) FROM vl_analysis_view WHERE upload_flag = 'TO_READ'";
+        String sql = "SELECT count(*) FROM vl_analysis_view WHERE upload_flag = 1";
 		try {
 			Query query = em.createNativeQuery(sql,Integer.class);
 			results = query.getResultList();
@@ -125,7 +138,7 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
     public List<VlAnalysisRecord> getAnalysisToInsert() {
         List<VlAnalysisRecord> response = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String sql = "SELECT * FROM vl_analysis_view WHERE upload_flag = 'TO_READ' LIMIT 100 ";
+        String sql = "SELECT * FROM vl_analysis_view WHERE upload_flag = 1 LIMIT 100 ";
 		try {
 			Query query = em.createNativeQuery(sql);
             List<Object[]> results = query.getResultList();
@@ -223,7 +236,7 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
 
     @Override
     public void updateReadAnalysis(List<VlAnalysisRecord> recordList){
-        String sql = "UPDATE analysis SET upload_flag = 'READ' WHERE id IN :ids";
+        String sql = "UPDATE analysis SET upload_flag = 3 WHERE id IN :ids";
         List<Integer> listId = recordList.stream().map(e->e.getAnalysisId()).collect(Collectors.toList());
         try {
 			Query query = em.createNativeQuery(sql);
@@ -253,7 +266,7 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
     public List<VlAnalysisRecord> getAnalysisToUpdate() {
         List<VlAnalysisRecord> response = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String sql = "SELECT * FROM vl_analysis_view WHERE upload_flag = 'TO_UPDATE' LIMIT 25 ";
+        String sql = "SELECT * FROM vl_analysis_view WHERE upload_flag = 2 LIMIT 25 ";
 		try {
 			Query query = em.createNativeQuery(sql);
 			List<Object[]> results = query.getResultList();
@@ -289,8 +302,8 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
                 analysis.setReleasedDate(ObjectUtils.isNotEmpty(o[15])?sdf.parse(o[15].toString()):null);
                 analysis.setTestResult(ObjectUtils.isNotEmpty(o[17])?o[17].toString():null);
                 analysis.setSpecimenType(o[18].toString());
-                analysis.setHivStatus(ObjectUtils.isNotEmpty(o[25])?o[25].toString():null);
-                analysis.setOrderReason(ObjectUtils.isNotEmpty(o[26])?o[26].toString():null);
+                analysis.setHivStatus(hivTypes().getOrDefault(ObjectUtils.isNotEmpty(o[25])?o[25].toString():null,""));
+                analysis.setOrderReason(orderReasonTypes().getOrDefault(ObjectUtils.isNotEmpty(o[26])?o[26].toString():null,""));
                 Boolean pregnancy = null;
                 if(ObjectUtils.isNotEmpty(o[27])){
                     if(o[27].toString().equals("1251")){
@@ -342,5 +355,25 @@ public class VlAnalysisRecordserviceImpl implements VlAnalysisRecordService{
 		}
 		return response;
     }
-    
+
+    private Map<String,String> hivTypes()
+    {
+        Map<String,String> types = new HashMap<>();
+        types.put("824", "VIH-1");
+        types.put("825", "VIH-2");
+        types.put("826", "VIH-1+2");
+        types.put("829", "Invalide");
+        return types;
+    }
+
+    private Map<String,String> orderReasonTypes()
+    {
+        Map<String,String> types = new HashMap<>();
+        types.put("1179", "Charge virale sous contrôle ARV");
+        types.put("1180", "Echec Virologique");
+        types.put("1181", "Echec Clinique");
+        types.put("1182", "Echec Immunologique");
+        types.put("1183", "Autres");
+        return types;
+    }
 }

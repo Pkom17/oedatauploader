@@ -6,11 +6,11 @@
 	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <changeSet id="2305191" author="pkomena">
+	<changeSet id="2305191" author="pkomena">
 		<preConditions>
-		<not>
-			<tableExists tableName="vl_analysis_record"/>
-		</not>
+			<not>
+				<tableExists tableName="vl_analysis_record" />
+			</not>
 		</preConditions>
 		<createTable tableName="vl_analysis_record">
 			<column name="id" type="int" autoIncrement="true">
@@ -116,18 +116,18 @@
 	</changeSet>
 	<changeSet id="2305192" author="pkomena">
 		<preConditions>
-			<tableExists tableName="analysis"/>
+			<tableExists tableName="analysis" />
 		</preConditions>
-		<addColumn schemaName="clinlims"
-			tableName="analysis">
-			<column name="upload_flag" type="varchar(100)" defaultValue="TO_READ">
+		<addColumn schemaName="clinlims" tableName="analysis">
+			<column name="upload_flag" type="varchar(100)"
+				defaultValue="TO_READ">
 				<constraints nullable="true" />
 			</column>
 		</addColumn>
 	</changeSet>
 	<changeSet id="23052503" author="pkomena">
 		<preConditions>
-			<tableExists tableName="vl_analysis_record"/>
+			<tableExists tableName="vl_analysis_record" />
 		</preConditions>
 		<addColumn schemaName="clinlims"
 			tableName="vl_analysis_record">
@@ -138,5 +138,79 @@
 				<constraints nullable="true" />
 			</column>
 		</addColumn>
+	</changeSet>
+	<changeSet id="23071201" author="pkomena">
+		<preConditions>
+			<tableExists tableName="analysis" />
+		</preConditions>
+		<addColumn schemaName="clinlims" tableName="analysis">
+			<column name="upl_flag" type="smallint" defaultValue="1">
+				<constraints nullable="true" />
+			</column>
+		</addColumn>
+	</changeSet>
+
+	<changeSet id="23071204" author="pkomena">
+		<preConditions>
+			<viewExists viewName="vl_analysis_view" />
+		</preConditions>
+		<dropView viewName="vl_analysis_view" />
+	</changeSet>
+
+	<changeSet id="23071202" author="pkomena">
+		<preConditions>
+			<tableExists tableName="analysis" />
+			<columnExists tableName="analysis"
+				columnName="upload_flag" />
+			<columnExists tableName="analysis" columnName="upl_flag" />
+		</preConditions>
+		<sql>
+			update clinlims.analysis set upl_flag = 1 where upload_flag =
+			'TO_READ';
+			update clinlims.analysis set upl_flag = 2 where upload_flag
+			= 'TO_UPDATE';
+			update clinlims.analysis set upl_flag = 3 where
+			upload_flag = 'READ';
+			alter table clinlims.analysis drop column
+			upload_flag;
+			alter table clinlims.analysis rename column upl_flag to
+			upload_flag;
+		</sql>
+	</changeSet>
+	<changeSet id="23071203" author="pkomena">
+		<preConditions>
+			<tableExists tableName="vl_analysis_record" />
+		</preConditions>
+		<sql>
+			UPDATE vl_analysis_record SET hiv_status = 'VIH-1' WHERE
+			hiv_status ='824';
+			UPDATE vl_analysis_record SET hiv_status = 'VIH-2'
+			WHERE hiv_status ='825';
+			UPDATE vl_analysis_record SET hiv_status =
+			'VIH-1+2' WHERE hiv_status ='826';
+			UPDATE vl_analysis_record SET
+			hiv_status = 'Invalide' WHERE hiv_status ='829';
+			UPDATE
+			vl_analysis_record SET order_reason = 'Charge virale sous contrôle
+			ARV' WHERE order_reason ='1179';
+			UPDATE vl_analysis_record SET
+			order_reason = 'Echec Virologique' WHERE order_reason ='1180';
+			UPDATE
+			vl_analysis_record SET order_reason = 'Echec Clinique' WHERE
+			order_reason ='1181';
+			UPDATE vl_analysis_record SET order_reason =
+			'Echec Immunologique' WHERE order_reason ='1182';
+			UPDATE
+			vl_analysis_record SET order_reason = 'Autres' WHERE order_reason
+			='1183';
+		</sql>
+	</changeSet>
+	<changeSet id="23071205" author="pkomena">
+		<preConditions>
+			<tableExists tableName="vl_analysis_record" />
+		</preConditions>
+		<sqlFile encoding="UTF-8" path="sql/view_vl_analysis.sql"
+			relativeToChangelogFile="true" splitStatements="false"
+			stripComments="false" />
 	</changeSet>
 </databaseChangeLog>
